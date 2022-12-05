@@ -1,0 +1,80 @@
+menu "ESP-Fish-Feeder"
+    config WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name).
+
+    config WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+        help
+            WiFi password.
+
+    config STEP1_GPIO
+        int "Step 1 GPIO Pin"
+        default 25
+        range 0 36
+        help
+            GPIO pin for stepper 1.
+
+    config STEP2_GPIO
+        int "Step 2 GPIO Pin"
+        default 26
+        range 0 36
+        help
+            GPIO pin for stepper 2.
+
+    config STEP3_GPIO
+        int "Step 3 GPIO Pin"
+        default 27
+        range 0 36
+        help
+            GPIO pin for stepper 3.
+
+    config STEP4_GPIO
+        int "Step 4 GPIO Pin"
+        default 14
+        range 0 36
+        help
+            GPIO pin for stepper 4.
+
+    config BTN1_GPIO
+        int "Button 1 GPIO Pin"
+        default 32
+        range 0 36
+        help
+            GPIO pin for button 1.
+
+    config BTN2_GPIO
+        int "Button 2 GPIO Pin"
+        default 33
+        range 0 36
+        help
+            GPIO pin for button 2.
+
+    config LIMIT_GPIO
+        int "Limit GPIO Pin"
+        default 35
+        range 0 36
+        help
+            GPIO pin for limit switch.
+
+    config TIMEZONE
+        string "Timezone"
+        default "MST7MDT,M3.2.0/2,M11.1.0"
+        help
+            Timezone for light dimming.
+
+    config BUTTONS_ACTIVE
+        bool "Buttons active"
+        default true
+        help
+            Buttons control the fish feeder.
+
+    config SLEEP_ACTIVE
+        bool "Sleep active"
+        default true
+        help
+            Put ESP32 to sleep between activations.
+endmenu
