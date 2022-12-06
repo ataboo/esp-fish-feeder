@@ -25,8 +25,6 @@ void app_main(void)
     esp_log_level_set("*", ESP_LOG_INFO);
 
     wifi_time_init();
-
     feeder_control_init();
-
     scheduler_start();
 }

@@ -15,6 +15,7 @@
 #define STEP_COUNT 4
 #define STEP_DELAY_MS 5
 #define STEPS_PER_BUCKET 580
+#define BUCKET_COUNT 6
 
 #ifdef CONFIG_BUTTONS_ACTIVE
 #define EXTEND_BUTTON_ACTIVE true
@@ -85,12 +86,26 @@ void start_callibration()
     has_callibrated = true;
 }
 
+static bool all_buckets_extended()
+{
+    return target_pos >= BUCKET_COUNT * STEPS_PER_BUCKET;
+}
+
 void extend_bucket()
+{
+    if (!all_buckets_extended() && target_pos <= position)
+    {
+        target_pos += STEPS_PER_BUCKET;
+        ESP_LOGI(TAG, "Next bucket: %d", target_pos);
+    }
+}
+
+void eject_buckets()
 {
     if (target_pos <= position)
     {
-        target_pos += (target_pos >= 6 * STEPS_PER_BUCKET ? 3 : 1) * STEPS_PER_BUCKET;
-        ESP_LOGI(TAG, "Next bucket: %d", target_pos);
+        target_pos += STEPS_PER_BUCKET * 3;
+        ESP_LOGI(TAG, "Ejecting buckets: %d", target_pos);
     }
 }
 
@@ -113,12 +128,17 @@ static void button_queue_task(void *params)
                     callibrating = false;
                 }
             }
-#ifdef CONFIG_BUTTONS_ACTIVE
             else if (pinNumber == CONFIG_BTN1_GPIO)
             {
-                extend_bucket();
+                if (all_buckets_extended())
+                {
+                    eject_buckets();
+                }
+                else if (EXTEND_BUTTON_ACTIVE)
+                {
+                    extend_bucket();
+                }
             }
-#endif
             else if ((EXTEND_BUTTON_ACTIVE || !has_callibrated) && pinNumber == CONFIG_BTN2_GPIO)
             {
                 level = gpio_get_level(CONFIG_LIMIT_GPIO);

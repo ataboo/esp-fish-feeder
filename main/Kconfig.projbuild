@@ -13,14 +13,14 @@ menu "ESP-Fish-Feeder"
 
     config STEP1_GPIO
         int "Step 1 GPIO Pin"
-        default 25
+        default 33
         range 0 36
         help
             GPIO pin for stepper 1.
 
     config STEP2_GPIO
         int "Step 2 GPIO Pin"
-        default 26
+        default 25
         range 0 36
         help
             GPIO pin for stepper 2.
@@ -41,21 +41,21 @@ menu "ESP-Fish-Feeder"
 
     config BTN1_GPIO
         int "Button 1 GPIO Pin"
-        default 32
+        default 35
         range 0 36
         help
             GPIO pin for button 1.
 
     config BTN2_GPIO
         int "Button 2 GPIO Pin"
-        default 33
+        default 32
         range 0 36
         help
             GPIO pin for button 2.
 
     config LIMIT_GPIO
         int "Limit GPIO Pin"
-        default 35
+        default 12
         range 0 36
         help
             GPIO pin for limit switch.
@@ -77,4 +77,11 @@ menu "ESP-Fish-Feeder"
         default true
         help
             Put ESP32 to sleep between activations.
+
+    config FEEDING_TIME
+        int "Feeding time"
+        default 900
+        range 0 2359
+        help
+            Time for feeding as 4 digit in (hhmm)
 endmenu
