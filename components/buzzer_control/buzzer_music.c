@@ -143,7 +143,7 @@ static esp_err_t parse_notes(const char* music_str, buzzer_keyframe_t* frames, i
 
             idx += 2;
         } else if (music_str[idx] == 'r') {
-            uint8_t rest_len = -1;
+            int8_t rest_len = -1;
             char len_char = music_str[idx+1];
             if (idx + 1 < len && len_char > '0' && len_char < '9') {
                 rest_len = (int)len_char - '0';

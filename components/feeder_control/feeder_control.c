@@ -11,19 +11,16 @@
 #include "esp_log.h"
 #include "driver/gpio.h"
 #include "freertos/queue.h"
+#include "esp_timer.h"
 
 #define STEP_COUNT 4
 #define STEP_DELAY_MS 5
-#define STEPS_PER_BUCKET 580
-#define BUCKET_COUNT 6
+#define BTN_COOLDOWN_US 250000
 
-#ifdef CONFIG_BUTTONS_ACTIVE
-#define EXTEND_BUTTON_ACTIVE true
-#else
-#define EXTEND_BUTTON_ACTIVE false
-#endif
+static uint64_t last_btn_1_down_us = 0;
+static uint64_t last_btn_2_down_us = 0;
 
-xQueueHandle button_queue;
+static QueueHandle_t button_queue;
 
 static const char *TAG = "FEEDER_CONTROL";
 static const bool STEPS[STEP_COUNT][4] = {
@@ -88,23 +85,24 @@ void start_callibration()
 
 static bool all_buckets_extended()
 {
-    return target_pos >= BUCKET_COUNT * STEPS_PER_BUCKET;
+    return target_pos >= CONFIG_BUCKET_COUNT * CONFIG_STEPS_PER_BUCKET;
 }
 
 void extend_bucket()
 {
     if (!all_buckets_extended() && target_pos <= position)
     {
-        target_pos += STEPS_PER_BUCKET;
+        target_pos += (target_pos == 0 ? CONFIG_FIRST_BUCKET_STEPS : CONFIG_STEPS_PER_BUCKET);
         ESP_LOGI(TAG, "Next bucket: %d", target_pos);
     }
 }
 
 void eject_buckets()
 {
+    has_callibrated = false;
     if (target_pos <= position)
     {
-        target_pos += STEPS_PER_BUCKET * 3;
+        target_pos += CONFIG_STEPS_PER_BUCKET * 3;
         ESP_LOGI(TAG, "Ejecting buckets: %d", target_pos);
     }
 }
@@ -128,23 +126,36 @@ static void button_queue_task(void *params)
                     callibrating = false;
                 }
             }
-            else if (pinNumber == CONFIG_BTN1_GPIO)
+            else if ( pinNumber == CONFIG_EXTEND_BTN_GPIO)
             {
-                if (all_buckets_extended())
-                {
-                    eject_buckets();
-                }
-                else if (EXTEND_BUTTON_ACTIVE)
-                {
-                    extend_bucket();
+                uint64_t now_us = esp_timer_get_time();
+                bool on_cooldown = now_us - last_btn_1_down_us < BTN_COOLDOWN_US;
+                last_btn_1_down_us = now_us;
+
+                if(!on_cooldown) {
+                    ESP_LOGI(TAG, "BTN 1");
+                    if (all_buckets_extended())
+                    {
+                        eject_buckets();
+                    }
+                    else if (CONFIG_EXTEND_BUTTON_ACTIVE)
+                    {
+                        extend_bucket();
+                    }
                 }
             }
-            else if ((EXTEND_BUTTON_ACTIVE || !has_callibrated) && pinNumber == CONFIG_BTN2_GPIO)
+            else if (!has_callibrated && pinNumber == CONFIG_RETRACT_BTN_GPIO)
             {
-                level = gpio_get_level(CONFIG_LIMIT_GPIO);
-                if (level == 1)
-                {
-                    start_callibration();
+                uint64_t now_us = esp_timer_get_time();
+                bool on_cooldown = now_us - last_btn_2_down_us < BTN_COOLDOWN_US;
+                last_btn_2_down_us = now_us;
+                if(!on_cooldown) {
+                    ESP_LOGI(TAG, "BTN 2");
+                    level = gpio_get_level(CONFIG_LIMIT_GPIO);
+                    if (level == 1)
+                    {
+                        start_callibration();
+                    }
                 }
             }
         }
@@ -170,7 +181,7 @@ static void target_step_task(void *params)
             stop();
         }
 
-        vTaskDelay(STEP_DELAY_MS / portTICK_RATE_MS);
+        vTaskDelay(STEP_DELAY_MS / portTICK_PERIOD_MS);
     }
 
     vTaskDelete(NULL);
@@ -181,7 +192,7 @@ static esp_err_t init_button_control()
     gpio_config_t in_conf = {};
     in_conf.intr_type = GPIO_INTR_POSEDGE;
     in_conf.mode = GPIO_MODE_INPUT;
-    in_conf.pin_bit_mask = (1ULL << CONFIG_BTN1_GPIO | 1ULL << CONFIG_BTN2_GPIO | 1ULL << CONFIG_LIMIT_GPIO);
+    in_conf.pin_bit_mask = (1ULL << CONFIG_EXTEND_BTN_GPIO | 1ULL << CONFIG_RETRACT_BTN_GPIO | 1ULL << CONFIG_LIMIT_GPIO);
     in_conf.pull_down_en = 0;
     in_conf.pull_up_en = 1;
     esp_err_t config_err = gpio_config(&in_conf);
@@ -197,10 +208,10 @@ static esp_err_t init_button_control()
     xTaskCreate(button_queue_task, "Button queue task", 2048, NULL, 5, NULL);
     xTaskCreate(target_step_task, "Target step task", 2048, NULL, 5, NULL);
 
-    config_err |= gpio_install_isr_service(0);
-    config_err |= gpio_isr_handler_add(CONFIG_BTN1_GPIO, gpio_interrupt_handler, (void *)CONFIG_BTN1_GPIO);
-    config_err |= gpio_isr_handler_add(CONFIG_BTN2_GPIO, gpio_interrupt_handler, (void *)CONFIG_BTN2_GPIO);
-    config_err |= gpio_isr_handler_add(CONFIG_LIMIT_GPIO, gpio_interrupt_handler, (void *)CONFIG_LIMIT_GPIO);
+    ESP_ERROR_CHECK(gpio_install_isr_service(0));
+    ESP_ERROR_CHECK(gpio_isr_handler_add(CONFIG_EXTEND_BTN_GPIO, gpio_interrupt_handler, (void *)CONFIG_EXTEND_BTN_GPIO));
+    ESP_ERROR_CHECK(gpio_isr_handler_add(CONFIG_RETRACT_BTN_GPIO, gpio_interrupt_handler, (void *)CONFIG_RETRACT_BTN_GPIO));
+    ESP_ERROR_CHECK(gpio_isr_handler_add(CONFIG_LIMIT_GPIO, gpio_interrupt_handler, (void *)CONFIG_LIMIT_GPIO));
 
     return config_err;
 }

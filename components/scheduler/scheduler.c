@@ -10,8 +10,9 @@
 #include "sdkconfig.h"
 #include "buzzer_music.h"
 #include "buzzer_control.h"
+#include "esp_timer.h"
 
-#define CLOCK_UPDATE_COOLDOWN_MINS (60)
+#define CLOCK_UPDATE_COOLDOWN_MINS (60*24*7*4)
 
 static const char *TAG = "FISH_FEED_SCHEDULER";
 
@@ -58,6 +59,7 @@ static void scheduler_loop_task(void *arg)
     ESP_LOGD(TAG, "Started update task");
     while (true)
     {
+        ESP_LOGI(TAG, "Tick loop");
         if (esp_timer_get_time() - last_clock_update_micros > clock_update_cooldown_micros)
         {
             update_internal_clock();
@@ -93,15 +95,15 @@ static void scheduler_loop_task(void *arg)
 }
 
 static void init_music() {
-    parse_music_str("o3l2co4c", &boot_music);
+    parse_music_str("o5l2co6c", &boot_music);
     boot_music->waveform = BUZZER_WAV_SQUARE;
     boot_music->loop = false;
 
-    parse_music_str("o3l1cr1fr1ar1o4cr1cccr1o3ar1aaar1fr1ar1fr1l2c", &ready_music);
+    parse_music_str("o5l1cr1fr1ar1o6cr1cccr1o5ar1aaar1fr1ar1fr1l2c", &ready_music);
     ready_music->waveform = BUZZER_WAV_SQUARE;
     ready_music->loop = false;
 
-    parse_music_str("o3l2cgo4er1o3cgo4er1", &feed_music);
+    parse_music_str("o5l2cgo6er1o5cgo6er1", &feed_music);
     feed_music->waveform = BUZZER_WAV_SQUARE;
     feed_music->loop = false;
 }
@@ -117,14 +119,12 @@ esp_err_t scheduler_start()
 {
     init_music();
     ESP_ERROR_CHECK_WITHOUT_ABORT(buzzer_control_init());
-    
-    buzzer_control_play_pattern(boot_music);
-
+    ESP_ERROR_CHECK_WITHOUT_ABORT(buzzer_control_play_pattern(boot_music));
     scheduler_init();
-
     buzzer_control_play_pattern(ready_music);
 
     xTaskCreate(scheduler_loop_task, "scheduler loop", 4096, NULL, 5, NULL);
+    
 
     return ESP_OK;
 }

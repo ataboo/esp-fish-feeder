@@ -39,19 +39,19 @@ menu "ESP-Fish-Feeder"
         help
             GPIO pin for stepper 4.
 
-    config BTN1_GPIO
-        int "Button 1 GPIO Pin"
-        default 35
+    config EXTEND_BTN_GPIO
+        int "Extend button GPIO pin"
+        default 15
         range 0 36
         help
-            GPIO pin for button 1.
+            GPIO pin for extend button.
 
-    config BTN2_GPIO
-        int "Button 2 GPIO Pin"
+    config RETRACT_BTN_GPIO
+        int "Retract btn GPIO pin"
         default 32
         range 0 36
         help
-            GPIO pin for button 2.
+            GPIO pin for retract button.
 
     config LIMIT_GPIO
         int "Limit GPIO Pin"
@@ -66,11 +66,27 @@ menu "ESP-Fish-Feeder"
         help
             Timezone for light dimming.
 
-    config BUTTONS_ACTIVE
-        bool "Buttons active"
+    config EXTEND_BUTTON_ACTIVE
+        bool "Extend button active"
         default true
         help
-            Buttons control the fish feeder.
+            Button 1 extends the fish feeder.
+
+
+    config STEPS_PER_BUCKET
+        int "Steps per bucket"
+        default 340
+        range 10 10000
+
+    config FIRST_BUCKET_STEPS
+        int "First bucket steps"
+        default 420
+        range 10 10000
+
+    config BUCKET_COUNT
+        int "Bucket count"
+        default 10
+        range 1 100
 
     config SLEEP_ACTIVE
         bool "Sleep active"
