@@ -41,24 +41,10 @@ menu "ESP-Fish-Feeder"
 
     config EXTEND_BTN_GPIO
         int "Extend button GPIO pin"
-        default 15
-        range 0 36
-        help
-            GPIO pin for extend button.
-
-    config RETRACT_BTN_GPIO
-        int "Retract btn GPIO pin"
         default 32
         range 0 36
         help
-            GPIO pin for retract button.
-
-    config LIMIT_GPIO
-        int "Limit GPIO Pin"
-        default 12
-        range 0 36
-        help
-            GPIO pin for limit switch.
+            GPIO pin for extend button.
 
     config TIMEZONE
         string "Timezone"
@@ -72,20 +58,14 @@ menu "ESP-Fish-Feeder"
         help
             Button 1 extends the fish feeder.
 
-
     config STEPS_PER_BUCKET
         int "Steps per bucket"
-        default 340
-        range 10 10000
-
-    config FIRST_BUCKET_STEPS
-        int "First bucket steps"
-        default 420
+        default 119
         range 10 10000
 
     config BUCKET_COUNT
         int "Bucket count"
-        default 10
+        default 8
         range 1 100
 
     config SLEEP_ACTIVE
